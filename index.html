@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미술 형성평가: 조형 요소와 원리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2e86c1;
+            --secondary-color: #95a5a6;
+            --bg-color: #f0f8ff;
+            --card-bg: #ffffff;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 650px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .progress {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* 이미지 스타일 개선 */
+        .image-container {
+            width: 100%;
+            height: 350px;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .quiz-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* 이미지 비율 유지 */
+            transition: transform 0.3s;
+        }
+
+        .img-caption {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 15px;
+            background: #eee;
+            padding: 8px;
+            border-radius: 5px;
+            line-height: 1.4;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: #222;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: #eaf2f8;
+            border-color: var(--primary-color);
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct-color) !important;
+            color: white;
+            border-color: var(--correct-color);
+        }
+
+        .option-btn.incorrect {
+            background-color: var(--incorrect-color) !important;
+            color: white;
+            border-color: var(--incorrect-color);
+        }
+
+        .feedback-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            text-align: left;
+            visibility: hidden;
+        }
+
+        .feedback-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 0;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--secondary-color);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .result-screen {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="quiz-app">
+        <div class="header">
+            <h1>🎨 미술 조형 요소와 원리 퀴즈</h1>
+            <div class="progress" id="progress">문제 1 / 6</div>
+        </div>
+
+        <div class="image-container">
+            <img id="quiz-img" src="" alt="작품 이미지" class="quiz-image">
+        </div>
+        <div id="img-desc" class="img-caption">작품 설명이 여기에 표시됩니다.</div>
+
+        <div class="question-text" id="question">질문이 여기에 표시됩니다.</div>
+
+        <div class="options-container" id="options"></div>
+
+        <div class="feedback-box" id="feedback">
+            <div class="feedback-title" id="feedback-msg"></div>
+            <div id="explanation"></div>
+        </div>
+
+        <div class="nav-controls">
+            <button class="nav-btn prev" id="prev-btn" onclick="prevQuestion()">◀ 이전으로</button>
+            <button class="nav-btn" id="next-btn" onclick="nextQuestion()">다음으로 ▶</button>
+        </div>
+    </div>
+
+    <div class="result-screen" id="result-screen">
+        <h2>🎉 퀴즈 완료!</h2>
+        <p>축하합니다! 모든 문제를 확인했습니다.<br>작품 속 조형 언어를 이해하는 유익한 시간이었길 바랍니다.</p>
+        <button class="nav-btn" style="width: 100%;" onclick="location.reload()">다시 풀기 🔄</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            category: "조형 요소",
+            imgSrc: "별이 빛나는 방에.jpg",
+            imgDesc: "🖼️ 반 고흐의 '별이 빛나는 밤'\n거친 붓터치가 겹쳐져 소용돌이치는 밤하늘을 표현하고 있습니다.",
+            question: "물체의 표면에서 느껴지는 시각적, 촉각적 특징을 무엇이라 하나요?",
+            options: ["명암", "양감", "질감", "형태", "공간감"],
+            answer: 2,
+            explanation: "질감(Texture)은 표면의 거칠기나 매끄러움을 뜻하며 고흐의 화법은 매우 강렬한 질감을 보여줍니다."
+        },
+        {
+            category: "조형 요소",
+            imgSrc: "모나리자.jpg",
+            imgDesc: "🖼️ 레오나르도 다빈치의 '모나리자'\n빛과 어둠의 단계를 미묘하게 조절하여 입체감을 살리고 있습니다.",
+            question: "빛에 의해 생기는 밝고 어두운 정도로 평면에 입체감을 주는 요소는?",
+            options: ["색채", "명암", "선", "비례", "통일"],
+            answer: 1,
+            explanation: "명암(Chiaroscuro)은 명도 차이를 통해 대상을 입체적으로 보이게 만듭니다."
+        },
+        {
+            category: "조형 요소",
+            imgSrc: "헨리무어.jpeg",
+            imgDesc: "🖼️ 헨리 무어의 조각상\n덩어리와 공간의 조화를 통해 인체의 무게감을 표현하고 있습니다.",
+            question: "조각 작품처럼 부피와 무게감을 가지고 있는 조형 요소는?",
+            options: ["점", "면", "형", "양감", "율동"],
+            answer: 3,
+            explanation: "양감(Volume)은 물체의 덩어리감이나 실재적인 무게감을 뜻합니다."
+        },
+        {
+            category: "조형 원리",
+            imgSrc: "몬드리안.jpg",
+            imgDesc: "🖼️ 몬드리안의 '빨강, 파랑, 노랑의 구성'\n수직선과 수평선, 원색의 면들이 질서 속에 배치되어 있습니다.",
+            question: "요소들이 흩어지지 않고 질서 속에 결합되어 안정감을 주는 원리는?",
+            options: ["대비", "강조", "통일", "변화", "율동"],
+            answer: 2,
+            explanation: "통일(Unity)은 화면 전체에 일관성을 주어 조화롭게 보이게 하는 원리입니다."
+        },
+        {
+            category: "조형 원리",
+            imgSrc: "김홍도 무동.jpg",
+            imgDesc: "🖼️ 김홍도의 '무동'\n춤추는 아이의 옷자락과 악사들의 배치가 리드미컬하게 표현되었습니다.",
+            question: "선이나 형의 반복을 통해 시각적 흐름과 생동감을 주는 원리는?",
+            options: ["율동", "대칭", "비례", "점증", "균형"],
+            answer: 0,
+            explanation: "율동(Rhythm)은 반복을 통해 마치 소리나 움직임이 들리는 듯한 느낌을 줍니다."
+        },
+        {
+            category: "조형 원리",
+            imgSrc: "다빈치의 인체비례도.jpg",
+            imgDesc: "🖼️ 레오나르도 다빈치의 '인체 비례도'\n정사각형과 원 안에서 신체 부위 간의 수학적 조화를 탐구한 작품입니다.",
+            question: "전체와 부분 사이의 일정한 크기나 양의 상대적 관계를 뜻하는 원리는?",
+            options: ["대비", "비례", "강조", "반복", "점이"],
+            answer: 1,
+            explanation: "비례(Proportion)는 크기 간의 균형 잡힌 관계를 의미하며 아름다움의 기초가 됩니다."
+        }
+    ];
+
+    let currentIdx = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+
+    function loadQuestion() {
+        const data = quizData[currentIdx];
+        
+        // 이미지 및 설명 업데이트
+        document.getElementById('quiz-img').src = data.imgSrc;
+        document.getElementById('img-desc').innerText = data.imgDesc;
+        
+        document.getElementById('question').innerText = `[${data.category}] ${data.question}`;
+        document.getElementById('progress').innerText = `문제 ${currentIdx + 1} / ${quizData.length}`;
+        
+        const optionsEl = document.getElementById('options');
+        optionsEl.innerHTML = '';
+        
+        document.getElementById('prev-btn').disabled = currentIdx === 0;
+        const nextBtn = document.getElementById('next-btn');
+        nextBtn.innerText = (currentIdx === quizData.length - 1) ? "결과 보기 🏁" : "다음으로 ▶";
+        nextBtn.disabled = userAnswers[currentIdx] === null;
+
+        data.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = `${index + 1}. ${opt}`;
+            
+            if (userAnswers[currentIdx] !== null) {
+                btn.disabled = true;
+                if (index === data.answer) btn.classList.add('correct');
+                if (index === userAnswers[currentIdx] && index !== data.answer) btn.classList.add('incorrect');
+            } else {
+                btn.onclick = () => checkAnswer(index);
+            }
+            optionsEl.appendChild(btn);
+        });
+
+        const feedbackEl = document.getElementById('feedback');
+        if (userAnswers[currentIdx] !== null) {
+            showFeedback(userAnswers[currentIdx] === data.answer);
+        } else {
+            feedbackEl.style.visibility = 'hidden';
+        }
+    }
+
+    function checkAnswer(selectedIdx) {
+        userAnswers[currentIdx] = selectedIdx;
+        const data = quizData[currentIdx];
+        const isCorrect = selectedIdx === data.answer;
+        
+        const buttons = document.querySelectorAll('.option-btn');
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (isCorrect) {
+            buttons[selectedIdx].classList.add('correct');
+        } else {
+            buttons[selectedIdx].classList.add('incorrect');
+            buttons[data.answer].classList.add('correct');
+        }
+
+        showFeedback(isCorrect);
+        document.getElementById('next-btn').disabled = false;
+    }
+
+    function showFeedback(isCorrect) {
+        const data = quizData[currentIdx];
+        const feedbackMsgEl = document.getElementById('feedback-msg');
+        feedbackMsgEl.innerText = isCorrect ? "정답입니다! 🎉" : "아쉬워요. 🤔 (표시된 것이 정답)";
+        feedbackMsgEl.style.color = isCorrect ? "var(--correct-color)" : "var(--incorrect-color)";
+        document.getElementById('explanation').innerText = data.explanation;
+        document.getElementById('feedback').style.visibility = 'visible';
+    }
+
+    function nextQuestion() {
+        if (currentIdx < quizData.length - 1) {
+            currentIdx++;
+            loadQuestion();
+        } else {
+            document.getElementById('quiz-app').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIdx > 0) {
+            currentIdx--;
+            loadQuestion();
+        }
+    }
+
+    // 초기 실행
+    loadQuestion();
+</script>
+
+</body>
+</html>
